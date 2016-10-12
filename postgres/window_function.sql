@@ -100,3 +100,39 @@ select id from
 	from v
 	where id = 1
 ) t where t.every is true;
+
+------------------------------------------
+--select id with latest date and with specific status
+
+--Input 
+--id,status,date
+--1;5;2016-10-12 07:45:47.319+00
+--2;3;2016-10-12 07:45:47.718+00
+--2;3;2016-10-12 07:45:58.78+00
+--3;5;2016-10-12 07:51:38.247+00
+--4;4;2016-10-12 07:51:38.471+00
+--5;3;2016-10-12 07:51:38.519+00
+--5;3;2016-10-12 07:51:42.537+00
+--6;2;2016-10-12 07:57:33.247+00
+--7;2;2016-10-12 07:45:48.806+00
+
+--Output
+--4;4;2016-10-12 07:51:38.471+00
+--1;5;2016-10-12 07:45:47.319+00
+--3;5;2016-10-12 07:51:38.247+00
+
+select id, status, date, description, cpp_error_code
+from (
+	select 	rank() over (partition by "id" order by "date" desc) as rank_by_date,
+		id, status, date, 
+		response_message, description, 
+		cpp_error_code
+	from 	appticoprod.transactions
+	where 	date >= '2016-10-12 07:45:00'::timestamp
+		and
+		date < '2016-10-12 08:00:00'::timestamp
+		and
+		status in (4 /*Finished*/, 5 /*Failed*/, 6 /*Canceled*/)
+	) as status
+where rank_by_date = 1;
+------------------------------------------
